@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/shabarkin/aws-enumerator/utils"
@@ -138,12 +140,32 @@ func (svc *ServiceMaster) save_result_to_file() {
 	ioutil.WriteFile(utils.ERROR_FILEPATH+svc.SvcName+"_errors.json", []byte(file_errors), 0644)
 }
 
-func CheckAWSCredentials() bool {
+func LoadAWSConfig(ctx context.Context, endpointURL string) (aws.Config, error) {
+	if endpointURL == "" {
+		return config.LoadDefaultConfig(ctx)
+	}
+
+	u, err := url.Parse(endpointURL)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" || u.User != nil || u.Fragment != "" {
+		return aws.Config{}, fmt.Errorf("invalid endpoint URL %q: expected an http or https URL with a host", endpointURL)
+	}
+
+	return config.LoadDefaultConfig(ctx, config.WithEndpointResolver(aws.EndpointResolverFunc(
+		func(service, region string) (aws.Endpoint, error) {
+			return aws.Endpoint{
+				URL: endpointURL, SigningRegion: region,
+				HostnameImmutable: true, Source: aws.EndpointSourceCustom,
+			}, nil
+		},
+	)))
+}
+
+func CheckAWSCredentials(endpointURL string) bool {
 	if utils.CheckEnvFileExistance() {
-		cfg, err := config.LoadDefaultConfig(context.TODO())
+		cfg, err := LoadAWSConfig(context.TODO(), endpointURL)
 		if err != nil {
-			fmt.Println(utils.Red("Error:"), utils.Yellow("Unable to load SDK config,"))
-			fmt.Println(utils.Green("Fix:"), utils.Yellow("The problem should be on our side, contact support please"))
+			fmt.Println(utils.Red("Error:"), utils.Yellow("Unable to load SDK config"))
+			fmt.Println(utils.Green("Fix:"), utils.Yellow("Check AWS configuration and endpoint URL"))
 			fmt.Println(utils.Red("Trace:"), utils.Yellow(err))
 			os.Exit(1)
 		}

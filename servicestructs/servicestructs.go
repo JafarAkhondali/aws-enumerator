@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/acm"
 	"github.com/aws/aws-sdk-go-v2/service/amplify"
 	"github.com/aws/aws-sdk-go-v2/service/apigateway"
@@ -114,9 +113,9 @@ import (
 	"github.com/shabarkin/aws-enumerator/utils"
 )
 
-func GetServices() []servicemaster.ServiceMaster {
+func GetServices(endpointURL string) []servicemaster.ServiceMaster {
 
-	cfg, err := config.LoadDefaultConfig(context.TODO())
+	cfg, err := servicemaster.LoadAWSConfig(context.TODO(), endpointURL)
 
 	if err != nil {
 		log.Fatalln(utils.Red("Error:"), utils.Yellow("Unable to load SDK config,"))

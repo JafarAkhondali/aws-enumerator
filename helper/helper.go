@@ -20,14 +20,14 @@ func changeSpeedForTime(speed string) (time int) {
 	return time
 }
 
-func SetEnumerationPipeline(services, speed *string) {
+func SetEnumerationPipeline(services, speed *string, endpointURL string) {
 	// Load Global Variables from file
 	utils.LoadEnv()
 
-	if servicemaster.CheckAWSCredentials() {
+	if servicemaster.CheckAWSCredentials(endpointURL) {
 
 		servicemaster.ServiceCall(
-			servicestructs.GetServices(),
+			servicestructs.GetServices(endpointURL),
 			utils.ProcessServiceArgument(*services),
 			changeSpeedForTime(*speed),
 		)
@@ -80,10 +80,12 @@ aws-enumerator enum [command]
 Flags:
   -services     Enumerate permissions specifying services divided by comma or 'all' for total enumeration
   -speed        Speed parameter has three defitions : fast or normal or slow (default is normal)
+  -endpoint-url Custom AWS endpoint URL for all service requests, including credential validation
 
 Example:
   ./aws-enumerator enum -services iam,sts,s3,ec2 -speed normal
   ./aws-enumerator enum -services all
+  ./aws-enumerator enum -services iam -endpoint-url http://localhost:4566
 `
 
 var Cloudrider_dump_help string = `Usage:
@@ -120,6 +122,7 @@ var AWS_session_token *string = Cred.String("aws_session_token", "", "")
 var Enum *flag.FlagSet = flag.NewFlagSet("enum", flag.ExitOnError)
 var Services_enum *string = Enum.String("services", "all", "")
 var Speed *string = Enum.String("speed", "normal", "")
+var EndpointURL *string = Enum.String("endpoint-url", "", "")
 
 var Dump *flag.FlagSet = flag.NewFlagSet("dump", flag.ExitOnError)
 var Services_dump *string = Dump.String("services", "all", "")

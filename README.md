@@ -64,6 +64,12 @@ To enumerate all services, you should use enum subcommand and supply all value o
 ./aws-enumerator enum -services all -speed slow
 ```
 
+To send credential validation and enumeration requests to a custom AWS endpoint, use `-endpoint-url` with an HTTP or HTTPS URL:
+
+```bash
+./aws-enumerator enum -services iam,sts -endpoint-url http://localhost:4566
+```
+
 ## Analysis
 
 To analyse the collected information, you should use `dump` subcommand: ( Use `all` for quick overview of available API calls )
